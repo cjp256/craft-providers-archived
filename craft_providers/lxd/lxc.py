@@ -479,7 +479,9 @@ def purge_project(*, lxc: LXC, project: str = "default", remote: str = "local") 
     # Cleanup any outstanding instances.
     for instance in lxc.list(project=project):
         logger.warning(f"Deleting instance {instance}.")
-        lxc.delete(instance=instance["name"], project=project, remote=remote)
+        lxc.delete(
+            instance=instance["name"], project=project, remote=remote, force=True
+        )
 
     # Cleanup any outstanding images.
     for image in lxc.image_list(project=project):
