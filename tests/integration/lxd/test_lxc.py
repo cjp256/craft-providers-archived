@@ -13,67 +13,31 @@ def test_project_default_cfg(lxc, project):
     assert updated_cfg == expected_cfg
 
 
-def test_exec(lxc, project):
-    lxc.launch(
-        config_keys=dict(),
-        instance="t1",
-        image_remote="ubuntu",
-        image="16.04",
-        project=project,
-    )
-
+def test_exec(instance, lxc, project):
     proc = lxc.exec(
-        instance="t1",
+        instance=instance,
         command=["echo", "this is a test"],
         project=project,
         capture_output=True,
     )
+
     assert proc.stdout == b"this is a test\n"
 
-    instances = lxc.list(project=project)
-    assert len(instances) == 1
-    assert instances[0]["name"] == "t1"
+def test_delete(instance, lxc, project):
+    with pytest.raises(subprocess.CalledProcessError):
+        lxc.delete(instance=instance, force=False, project=project)
 
-    images = lxc.image_list(project=project)
-    assert len(images) == 1
-
-
-def test_delete_force(lxc, project):
-    lxc.launch(
-        config_keys=dict(),
-        instance="t1",
-        image_remote="ubuntu",
-        image="16.04",
-        project=project,
-    )
-
-    instances = lxc.list(project=project)
-    assert len(instances) == 1
-    assert instances[0]["name"] == "t1"
-
-    lxc.delete(instance="t1", force=True, project=project)
+    lxc.stop(instance=instance, project=project)
+    lxc.delete(instance=instance, force=False, project=project)
 
     instances = lxc.list(project=project)
     assert instances == []
 
+def test_delete_force(instance, lxc, project):
+    lxc.delete(instance=instance, force=True, project=project)
 
-def test_delete_no_force(lxc, project):
-    lxc.launch(
-        config_keys=dict(),
-        instance="t1",
-        image_remote="ubuntu",
-        image="16.04",
-        project=project,
-        ephemeral=False,
-    )
-
-    with pytest.raises(subprocess.CalledProcessError):
-        lxc.delete(instance="t1", force=False, project=project)
-
-    lxc.stop(instance="t1", project=project)
-
-    lxc.delete(instance="t1", force=False, project=project)
-
+    instances = lxc.list(project=project)
+    assert instances == []
 
 def test_image_copy(lxc, project):
     lxc.image_copy(
@@ -113,7 +77,7 @@ def test_file_push(instance, lxc, project, tmp_path):
     )
 
     proc = lxc.exec(
-        instance="t1",
+        instance=instance,
         command=["cat", "/tmp/foo"],
         project=project,
         capture_output=True,

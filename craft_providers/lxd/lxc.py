@@ -115,7 +115,7 @@ class LXC:
         instance: str,
         project: str = "default",
         remote: str = "local",
-        force=True,
+        force=False,
     ) -> None:
         """Delete instance."""
         command = ["delete", f"{remote}:{instance}"]
@@ -270,7 +270,7 @@ class LXC:
         image: str,
         image_remote: str,
         instance: str,
-        ephemeral: bool = True,
+        ephemeral: bool = False,
         project: str = "default",
         remote: str = "local",
     ) -> None:

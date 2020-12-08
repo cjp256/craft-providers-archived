@@ -1,4 +1,6 @@
 import pathlib
+import random
+import string
 import subprocess
 
 import pytest
@@ -35,9 +37,7 @@ def lxc(lxd):
 
 @pytest.fixture()
 def project(lxc):
-    project = "xcraft-test-project"
-    purge_project(lxc=lxc, project=project)
-
+    project = "ptest-" + "".join(random.choices(string.ascii_uppercase, k=8))
     lxc.project_create(project=project)
 
     default_cfg = lxc.profile_show(profile="default", project="default")
@@ -56,15 +56,28 @@ def project(lxc):
 
 @pytest.fixture()
 def instance(lxc, project):
-    instance = "t1"
+    instance = "itest-" + "".join(random.choices(string.ascii_uppercase, k=8))
     lxc.launch(
         config_keys=dict(),
         instance=instance,
         image_remote="ubuntu",
         image="16.04",
         project=project,
+        ephemeral=False,
     )
 
     yield instance
 
-    lxc.delete(instance=instance, project=project)
+@pytest.fixture()
+def ephemeral_instance(lxc, project):
+    instance = "itest-" + "".join(random.choices(string.ascii_uppercase, k=8))
+    lxc.launch(
+        config_keys=dict(),
+        instance=instance,
+        image_remote="ubuntu",
+        image="16.04",
+        project=project,
+        ephemeral=True,
+    )
+
+    yield instance

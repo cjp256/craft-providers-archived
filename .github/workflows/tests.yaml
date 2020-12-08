@@ -38,5 +38,12 @@ jobs:
         run: |
           source ${HOME}/.venv/bin/activate
           make test-units
+      - name: Run integration tests
+        run: |
+          apt install -y snap
+          snap wait system.seeded
+          snap install lxd
+          source ${HOME}/.venv/bin/activate
+          make test-integrations
       - name: Upload code coverage
         uses: codecov/codecov-action@v1
