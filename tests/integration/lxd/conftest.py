@@ -68,6 +68,7 @@ def instance(lxc, project):
 
     yield instance
 
+
 @pytest.fixture()
 def ephemeral_instance(lxc, project):
     instance = "itest-" + "".join(random.choices(string.ascii_uppercase, k=8))

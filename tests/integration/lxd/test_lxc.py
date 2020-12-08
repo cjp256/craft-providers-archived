@@ -23,6 +23,7 @@ def test_exec(instance, lxc, project):
 
     assert proc.stdout == b"this is a test\n"
 
+
 def test_delete(instance, lxc, project):
     with pytest.raises(subprocess.CalledProcessError):
         lxc.delete(instance=instance, force=False, project=project)
@@ -33,11 +34,13 @@ def test_delete(instance, lxc, project):
     instances = lxc.list(project=project)
     assert instances == []
 
+
 def test_delete_force(instance, lxc, project):
     lxc.delete(instance=instance, force=True, project=project)
 
     instances = lxc.list(project=project)
     assert instances == []
+
 
 def test_image_copy(lxc, project):
     lxc.image_copy(
