@@ -1,0 +1,16 @@
+autoflake
+coverage
+black
+bump2version
+codespell
+flake8
+isort
+pip
+pytest
+pytest-runner
+pyyaml
+sphinx
+sphinx-rtd-theme
+tox
+twine
+wheel
