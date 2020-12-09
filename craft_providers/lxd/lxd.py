@@ -29,9 +29,9 @@ class LXD:
         )
 
         version = float(proc.stdout)
-        if version < 4.8:
+        if version < 4.0:
             raise RuntimeError(
-                "LXD version {version!r} is unsupported. Must be >= 4.8."
+                "LXD version {version!r} is unsupported. Must be >= 4.0."
             )
 
     def _find_lxd(self) -> pathlib.Path:
