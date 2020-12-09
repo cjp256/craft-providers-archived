@@ -11,7 +11,7 @@ with open("HISTORY.md") as history_file:
     history = history_file.read()
 
 requirements = [
-    "pyyaml>=5.3.1",
+    "pyyaml",
 ]
 
 setup_requirements = [
