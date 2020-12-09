@@ -11,6 +11,7 @@ pytest
 pytest-runner
 pyyaml
 sphinx
+sphinx-autodoc-typehints
 sphinx-rtd-theme
 tox
 twine
