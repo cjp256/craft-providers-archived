@@ -37,13 +37,8 @@ class BuilddImage(Image):
         self.hostname = hostname
 
     def setup(self, *, executor: Executor) -> None:
-        # Make sure container is ready.
-        executor.execute_run(
-            command=["systemctl", "start", "multi-user.target"],
-            check=True,
-        )
-
         self._setup_hostname(executor=executor)
+        self._setup_wait_for_systemd(executor=executor)
         self._setup_resolved(executor=executor)
         self._setup_networkd(executor=executor)
         self._setup_wait_for_network(executor=executor)
