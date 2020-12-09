@@ -30,7 +30,7 @@ class LXC:
         *,
         command: List[str],
         project: str = "default",
-        check=True,
+        check: bool = True,
         input=None,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -51,7 +51,7 @@ class LXC:
                     command, check=check, stderr=stderr, stdout=stdout
                 )
         except subprocess.CalledProcessError as error:
-            logger.info(f"Failed to execute: {error.output}")
+            logger.warning(f"Failed to execute: {error.output}")
             raise error
 
         return proc
@@ -217,7 +217,7 @@ class LXC:
         instance: str,
         source: pathlib.Path,
         destination: pathlib.Path,
-        create_dirs: bool = True,
+        create_dirs: bool = False,
         recursive: bool = False,
         gid: str = "-1",
         uid: str = "-1",
