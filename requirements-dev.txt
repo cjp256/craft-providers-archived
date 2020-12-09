@@ -5,6 +5,7 @@ bump2version
 codespell
 flake8
 isort
+mypy
 pip
 pytest
 pytest-runner
