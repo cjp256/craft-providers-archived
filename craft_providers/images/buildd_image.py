@@ -37,6 +37,30 @@ class BuilddImage(Image):
         self.hostname = hostname
 
     def setup(self, *, executor: Executor) -> None:
+        # Make sure container is ready.
+        executor.execute_run(
+            command=["systemctl", "start", "multi-user.target"],
+            check=True,
+        )
+
+        self._setup_hostname(executor=executor)
+        self._setup_resolved(executor=executor)
+        self._setup_networkd(executor=executor)
+        self._setup_wait_for_network(executor=executor)
+        self._setup_apt(executor=executor)
+        self._setup_snapd(executor=executor)
+
+    def _setup_apt(self, *, executor: Executor) -> None:
+        executor.execute_run(command=["apt-get", "update"], check=True)
+
+    def _setup_hostname(self, *, executor: Executor) -> None:
+        executor.create_file(
+            destination=pathlib.Path("/etc/hostname"),
+            content=self.hostname.encode(),
+            file_mode="0644",
+        )
+
+    def _setup_networkd(self, *, executor: Executor) -> None:
         executor.create_file(
             destination=pathlib.Path("/etc/systemd/network/10-eth0.network"),
             content=dedent(
@@ -56,14 +80,6 @@ class BuilddImage(Image):
             file_mode="0644",
         )
 
-        executor.create_file(
-            destination=pathlib.Path("/etc/hostname"),
-            content=self.hostname.encode(),
-            file_mode="0644",
-        )
-
-        self._setup_wait_for_systemd(executor=executor)
-
         executor.execute_run(
             command=["systemctl", "enable", "systemd-networkd"], check=True
         )
@@ -72,6 +88,7 @@ class BuilddImage(Image):
             command=["systemctl", "restart", "systemd-networkd"], check=True
         )
 
+    def _setup_resolved(self, *, executor: Executor) -> None:
         # Use resolv.conf managed by systemd-resolved.
         executor.execute_run(
             command=[
@@ -91,23 +108,12 @@ class BuilddImage(Image):
             command=["systemctl", "restart", "systemd-resolved"], check=True
         )
 
-        executor.execute_run(
-            command=["systemctl", "restart", "systemd-networkd"], check=True
-        )
-
-        self._setup_wait_for_network(executor=executor)
-
-        executor.execute_run(command=["apt-get", "update"], check=True)
-
-        # Install commonly required packages:
-        # - dirmngr: for configuring apt GPG keyrings
-        # - fuse: for snapd
-        # - udev: for snapd
+    def _setup_snapd(self, *, executor: Executor) -> None:
+        # Install dependencies first.
         executor.execute_run(
             command=[
                 "apt-get",
                 "install",
-                "dirmngr",
                 "fuse",
                 "udev",
                 "--yes",
@@ -122,9 +128,9 @@ class BuilddImage(Image):
             command=["systemctl", "start", "systemd-udevd"], check=True
         )
 
-        # Snapd depends on systemd-udev and above dependencies (fuse, udev).
+        # Now install snapd.
         executor.execute_run(
-            command=["apt-get", "install", "snapd", "sudo", "--yes"], check=True
+            command=["apt-get", "install", "snapd", "--yes"], check=True
         )
         executor.execute_run(command=["systemctl", "start", "snapd"], check=True)
 
@@ -134,7 +140,9 @@ class BuilddImage(Image):
             )
         else:
             # XXX: better way to ensure snapd is ready on core?
-            sleep(5)
+            executor.execute_run(
+                command=["systemctl", "start", "snapd.seeded.service"], check=True
+            )
 
     def _setup_wait_for_network(self, *, executor: Executor) -> None:
         logger.info("Waiting for network to be ready...")
