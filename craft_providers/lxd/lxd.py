@@ -28,8 +28,10 @@ class LXD:
             stderr=subprocess.PIPE,
         )
 
-        version = float(proc.stdout)
-        if version < 4.0:
+        version = proc.stdout.decode().strip()
+        version_components = version.split(".")
+        major_minor = ".".join([version_components[0], version_components[1]])
+        if float(major_minor) < 4.0:
             raise RuntimeError(
                 "LXD version {version!r} is unsupported. Must be >= 4.0."
             )
