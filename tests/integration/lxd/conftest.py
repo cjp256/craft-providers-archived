@@ -66,7 +66,14 @@ def instance(lxc, project):
         ephemeral=False,
     )
 
-    yield instance
+    # Make sure container is ready.
+    lxc.exec(
+        project=project,
+        instance=instance,
+        command=["systemctl", "start", "multi-user.target"],
+    )
+
+    return instance
 
 
 @pytest.fixture()
@@ -81,4 +88,4 @@ def ephemeral_instance(lxc, project):
         ephemeral=True,
     )
 
-    yield instance
+    return instance

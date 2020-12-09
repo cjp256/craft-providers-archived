@@ -80,19 +80,21 @@ def test_file_push(instance, lxc, project, tmp_path):
     )
 
     proc = lxc.exec(
-        instance=instance,
         command=["cat", "/tmp/foo"],
+        instance=instance,
         project=project,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=True,
     )
+
     assert proc.stdout == b"this is a test"
 
 
 def test_file_pull(instance, lxc, project, tmp_path):
+    out_path = tmp_path / "out.txt"
     tf = tmp_path / "test.txt"
     tf.write_text("this is a test")
-
-    out_path = tmp_path / "out.txt"
 
     lxc.file_push(
         instance=instance,
@@ -100,6 +102,7 @@ def test_file_pull(instance, lxc, project, tmp_path):
         source=tf,
         destination=pathlib.Path("/tmp/foo"),
     )
+
     lxc.file_pull(
         instance=instance,
         project=project,
