@@ -42,12 +42,14 @@ jobs:
         run: |
           source ${HOME}/.venv/bin/activate
           make test-units
-      - name: Run integration tests
+      - name: Install LXD
         run: |
           sudo apt install -y snap
-          systemctl start snapd
+          sudo systemctl start snapd
           sudo snap wait system.seeded
           sudo snap install lxd
+      - name: Run integration tests
+        run: |
           source ${HOME}/.venv/bin/activate
           make test-integrations
       - name: Upload code coverage
