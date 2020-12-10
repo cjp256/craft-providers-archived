@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from typing import Any, Dict, List, Optional
 
-from .executor import Executor
+from .. import Executor
 
 logger = logging.getLogger(__name__)
 

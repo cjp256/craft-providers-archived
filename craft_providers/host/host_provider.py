@@ -1,9 +1,8 @@
 import logging
 from typing import Optional
 
-from .. import Provider
-from ..executors.executor import Executor
-from ..executors.host import HostExecutor
+from .. import Executor, Provider
+from .host_executor import HostExecutor
 
 logger = logging.getLogger(__name__)
 

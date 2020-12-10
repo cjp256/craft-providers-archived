@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
-from .executors.executor import Executor
+from . import Executor
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ import subprocess
 from textwrap import dedent
 from time import sleep
 
-from ..executors import Executor
+from .. import Executor
 from .image import Image
 
 logger = logging.getLogger(__name__)
