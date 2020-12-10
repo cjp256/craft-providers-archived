@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 
+from .executors.executor import Executor
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +54,7 @@ class Provider(ABC):
         self.teardown()
 
     @abstractmethod
-    def setup(self):
+    def setup(self) -> Executor:
         """Launch environment."""
 
         ...
