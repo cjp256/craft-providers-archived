@@ -5,8 +5,9 @@ import subprocess
 from textwrap import dedent
 from time import sleep
 
+from craft_providers.image import Image
+
 from .. import Executor
-from .image import Image
 
 logger = logging.getLogger(__name__)
 
