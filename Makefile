@@ -29,29 +29,35 @@ autoformat:
 	black .
 
 .PHONY: clean
-clean: clean-build clean-pyc clean-test
+clean: clean-build clean-docs clean-pyc clean-test
 
 .PHONY: clean-build
 clean-build:
-	rm -fr build/
-	rm -fr dist/
-	rm -fr .eggs/
-	find . -name '*.egg-info' -exec rm -fr {} +
+	rm -rf build/
+	rm -rf dist/
+	rm -rf .eggs/
+	find . -name '*.egg-info' -exec rm -rf {} +
 	find . -name '*.egg' -exec rm -f {} +
+
+.PHONY: clean-docs
+clean-docs:
+	rm -rf docs/_build/
+	rm -f docs/craft_providers.*
+	rm -f docs/modules.rst
 
 .PHONY: clean-pyc
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
-	find . -name '__pycache__' -exec rm -fr {} +
+	find . -name '__pycache__' -exec rm -rf {} +
 
 .PHONY: clean-tests
 clean-test:
-	rm -fr .tox/
+	rm -rf .tox/
 	rm -f .coverage
-	rm -fr htmlcov/
-	rm -fr .pytest_cache
+	rm -rf htmlcov/
+	rm -rf .pytest_cache
 
 .PHONY: coverage
 coverage:

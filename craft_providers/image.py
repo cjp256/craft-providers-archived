@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
-from ..executors import Executor
+from craft_providers import Executor
 
 logger = logging.getLogger(__name__)
 

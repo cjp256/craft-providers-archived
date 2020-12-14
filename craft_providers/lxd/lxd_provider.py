@@ -1,14 +1,14 @@
 import logging
 from typing import Optional
 
-from ..executed_provider import ExecutedProvider
 from ..images import Image
+from ..provider import Provider
 from . import LXC, LXD, LXDInstance
 
 logger = logging.getLogger(__name__)
 
 
-class LXDProvider(ExecutedProvider):
+class LXDProvider(Provider):
     """Base LXD Provider.
 
     This should be subclassed and extended for each project.

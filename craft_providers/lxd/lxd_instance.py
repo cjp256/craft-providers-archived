@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 from typing import Any, Dict, List, Optional
 
-from ..executors import Executor
+from .. import Executor
 from .lxc import LXC
 
 logger = logging.getLogger(__name__)

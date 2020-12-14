@@ -12,7 +12,7 @@ Here you will find all of the provider documentation...
    :maxdepth: 2
    :caption: Contents:
 
-   craft_providers
+   images
 
 Indices and tables
 ==================

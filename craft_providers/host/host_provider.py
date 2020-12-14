@@ -1,39 +1,26 @@
 import logging
-from typing import Dict
+from typing import Optional
 
-from ..executed_provider import ExecutedProvider
-from ..executors.executor import Executor
-from ..executors.host import HostExecutor
+from .. import Executor, Provider
+from .host_executor import HostExecutor
 
 logger = logging.getLogger(__name__)
 
 
-class HostProvider(ExecutedProvider):
+class HostProvider(Provider):
     """Run commands directly on host."""
 
     def __init__(
         self,
         *,
-        default_run_environment: Dict[str, str],
-        executor: Executor,
-        sudo: bool = True,
-        sudo_user: str = "root",
+        sudo_user: Optional[str] = "root",
     ) -> None:
+        self.sudo_user = sudo_user
 
-        if executor is None:
-            executor = HostExecutor(
-                sudo=sudo,
-                sudo_user=sudo_user,
-            )
-
-        super().__init__(
-            executor=executor,
-            default_run_environment=default_run_environment,
+    def setup(self) -> Executor:
+        return HostExecutor(
+            sudo_user=self.sudo_user,
         )
-
-    def setup(self):
-        # TODO Instance class
-        pass
 
     def teardown(self, *, clean: bool = False) -> None:
         pass
