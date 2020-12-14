@@ -133,6 +133,7 @@ def main():
     width = max(map(len, emails))
     lp = None
     failed = False
+    cla_folks = set()
     print("Need to check {} emails:".format(len(emails)))
     for email in emails:
         if static_email_check(email, master_emails, width):

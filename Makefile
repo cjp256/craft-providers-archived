@@ -124,6 +124,10 @@ test-isort:
 test-mypy:
 	mypy .
 
+.PHONY: test-pyright
+test-pyright:
+	pyright .
+
 .PHONY: test-units
 test-units:
 	pytest tests/unit

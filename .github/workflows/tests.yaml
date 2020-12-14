@@ -40,6 +40,12 @@ jobs:
         run: |
           source ${HOME}/.venv/bin/activate
           make test-mypy
+      - name: Run pyright
+        run: |
+          sudo apt install -y npm
+          sudo npm install -g pyright
+          source ${HOME}/.venv/bin/activate
+          make test-pyright
       - name: Run unit tests
         run: |
           source ${HOME}/.venv/bin/activate
