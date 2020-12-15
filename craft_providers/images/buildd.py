@@ -4,10 +4,12 @@ import pathlib
 import subprocess
 from textwrap import dedent
 from time import sleep
+from typing import Any, Dict, Optional
 
-from craft_providers.image import Image
+import yaml
 
-from .. import Executor
+from craft_providers import Executor, Image, images
+from craft_providers.util.os_release import parse_os_release
 
 logger = logging.getLogger(__name__)
 
@@ -30,24 +32,91 @@ class BuilddImage(Image):
     Attributes:
         alias: Image alias / version.
         hostname: Hostname to configure.
-        revision: Setup compatibility revision.
         version: Image version (e.g. "16.04").
+        revision: Image setup revisionversion (e.g. "16.04").
     """
 
     def __init__(
         self,
         *,
         alias: BuilddImageAlias,
+        revision: str = "0",
         hostname: str = "craft-buildd-instance",
     ):
         """Initialize buildd image."""
-        super().__init__(
-            version=str(alias.value),
-            revision=0,
-        )
+        super().__init__(name=str(alias.value), revision=revision)
 
         self.alias = alias
         self.hostname = hostname
+
+    def _read_craft_image_config(
+        self, *, executor: Executor
+    ) -> Optional[Dict[str, Any]]:
+        try:
+            proc = executor.execute_run(
+                command=["cat", "/etc/craft-image.conf"],
+                check=True,
+                stdout=subprocess.PIPE,
+            )
+        except subprocess.CalledProcessError:
+            return None
+
+        return yaml.load(proc.stdout, Loader=yaml.SafeLoader)
+
+    def _write_craft_image_config(self, *, executor: Executor) -> None:
+        conf = {"revision": self.revision}
+        executor.create_file(
+            destination=pathlib.Path("/etc/craft-image.conf"),
+            content=yaml.dump(conf).encode(),
+            file_mode="0644",
+        )
+
+    def _read_os_release(self, *, executor: Executor) -> Optional[Dict[str, Any]]:
+        try:
+            proc = executor.execute_run(
+                command=["cat", "/etc/os-release"],
+                check=False,
+                stdout=subprocess.PIPE,
+            )
+        except subprocess.CalledProcessError:
+            return None
+
+        return parse_os_release(proc.stdout.decode())
+
+    def ensure_compatible(self, *, executor: Executor) -> None:
+        self._ensure_image_revision_compatible(executor=executor)
+        self._ensure_os_compatible(executor=executor)
+
+    def _ensure_image_revision_compatible(self, *, executor: Executor) -> None:
+        craft_config = self._read_craft_image_config(executor=executor)
+
+        # If no config has been written, assume it is compatible (likely an unfinished setup).
+        if craft_config is None:
+            return
+
+        revision = craft_config.get("revision")
+        if revision != self.revision:
+            raise images.CompatibilityError(
+                reason=f"Expected image revision {self.revision!r}, found '{revision!s}'"
+            )
+
+    def _ensure_os_compatible(self, *, executor: Executor) -> None:
+        os_release = self._read_os_release(executor=executor)
+        if os_release is None:
+            raise images.CompatibilityError(reason="/etc/os-release not found")
+
+        logger.warning(os_release)
+        os_id = os_release.get("NAME")
+        if os_id != "Ubuntu":
+            raise images.CompatibilityError(
+                reason=f"Exepcted OS 'Ubuntu', found {os_id!r}"
+            )
+
+        version_id = os_release.get("VERSION_ID")
+        if version_id != self.name:
+            raise images.CompatibilityError(
+                reason=f"Expected OS version {self.name!r}, found {version_id!r}"
+            )
 
     def setup(self, *, executor: Executor) -> None:
         """Configure buildd image to minimum baseline.
@@ -61,8 +130,9 @@ class BuilddImage(Image):
         Args:
             executor: Executor for target container.
         """
-        self._setup_hostname(executor=executor)
+        self.ensure_compatible(executor=executor)
         self._setup_wait_for_system_ready(executor=executor)
+        self._setup_hostname(executor=executor)
         self._setup_resolved(executor=executor)
         self._setup_networkd(executor=executor)
         self._setup_wait_for_network(executor=executor)
@@ -227,6 +297,4 @@ class BuilddImage(Image):
             logger.debug(f"systemctl is-system-running: {running_state!r}")
             sleep(0.5)
         else:
-            logger.warning(
-                f"Systemd failed to reach target before timeout: {proc.stdout}."
-            )
+            logger.warning("Systemd failed to reach target before timeout.")

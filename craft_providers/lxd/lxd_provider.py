@@ -1,42 +1,56 @@
 import logging
 from typing import Optional
 
-from ..images import Image
-from ..provider import Provider
-from . import LXC, LXD, LXDInstance
+from craft_providers import Provider, images
+from craft_providers.lxd import LXC, LXD, LXDInstance
 
 logger = logging.getLogger(__name__)
 
 
 class LXDProvider(Provider):
-    """Base LXD Provider.
+    """LXD Provider.
 
-    This should be subclassed and extended for each project.
-
+    Args:
+        image: Image configuration.
+        instance_name: Name of instance to use/create.
+        auto_clean: Automatically clean LXD instances if required (e.g. incompatible).
+        image_remote_addr: Remote address for LXD image to use.
+        image_remote_name: Remote name for LXD image to use.
+        image_remote_protocol: Remote protoocl for LXD image to use.
+        instance: Specific LXDInstance to use, rather than create.
+        lxc: LXC client API.
+        lxd: LXD server API.
+        project: Name of LXD project.
+        remote: Name of LXD remote for instance to run on.
+        use_ephemeral_instances: Set instances to be ephemeral (clean on shutdown).
+        use_intermediate_instances: Create intermediate instances to speedup setup of future instances.
     """
 
     def __init__(
         self,
         *,
+        image: images.Image,
         instance_name: str,
-        image: Image,
+        auto_clean: bool = True,
         image_remote_addr: str = "https://cloud-images.ubuntu.com/buildd/releases",
         image_remote_name: str = "ubuntu-buildd",
         image_remote_protocol: str = "simplestreams",
         instance: Optional[LXDInstance] = None,
         lxc: Optional[LXC] = None,
         lxd: Optional[LXD] = None,
-        use_ephemeral_instances: bool = True,
-        use_intermediate_image: bool = True,
         project: str = "default",
         remote: str = "local",
+        use_ephemeral_instances: bool = True,
+        use_intermediate_image: bool = True,
     ):
         self.image = image
-        self.instance = instance
         self.instance_name = instance_name
+
         self.image_remote_addr = image_remote_addr
         self.image_remote_name = image_remote_name
         self.image_remote_protocol = image_remote_protocol
+        self.instance = instance
+        self.auto_clean = auto_clean
 
         if lxc is None:
             self.lxc = LXC()
@@ -48,12 +62,20 @@ class LXDProvider(Provider):
         else:
             self.lxd = lxd
 
-        self.use_ephemeral_instances = use_ephemeral_instances
-        self.use_intermediate_image = use_intermediate_image
         self.project = project
         self.remote = remote
+        self.use_ephemeral_instances = use_ephemeral_instances
+        self.use_intermediate_image = use_intermediate_image
 
     def setup(self) -> LXDInstance:
+        """Sets up instance, creating intermediate image as configured.
+
+        Returns:
+            LXD instance.
+
+        Raises:
+            IncompatibleInstanceError: If incompatible and clean is disabled.
+        """
         self.lxd.setup()
         self.lxc.setup()
 
@@ -70,7 +92,7 @@ class LXDProvider(Provider):
         else:
             self.instance = self._setup_instance(
                 instance=self.instance_name,
-                image=self.image.version,
+                image=self.image.name,
                 image_remote=self.image_remote_name,
                 ephemeral=self.use_ephemeral_instances,
             )
@@ -99,6 +121,18 @@ class LXDProvider(Provider):
             protocol=self.image_remote_protocol,
         )
 
+    def _setup_existing_instance(self, *, lxd_instance: LXDInstance) -> None:
+        try:
+            self.image.setup(executor=lxd_instance)
+        except images.CompatibilityError as error:
+            if self.auto_clean:
+                logger.warning(
+                    f"Cleaning incompatible instance {lxd_instance.name!r}: ({error.reason})"
+                )
+                lxd_instance.delete(force=True)
+            else:
+                raise error
+
     def _setup_instance(
         self,
         *,
@@ -114,25 +148,25 @@ class LXDProvider(Provider):
             lxc=self.lxc,
         )
 
+        # If instance already exists, special case it
+        # to ensure the instance is cleaned if incompatible.
         if lxd_instance.exists():
-            # TODO: add verififcation that instance matches
-            if not lxd_instance.is_running():
-                lxd_instance.start()
-        else:
+            self._setup_existing_instance(lxd_instance=lxd_instance)
+
+        if not lxd_instance.exists():
             lxd_instance.launch(
                 image=image,
                 image_remote=image_remote,
                 ephemeral=ephemeral,
             )
 
-        self.image.setup(executor=lxd_instance)
         return lxd_instance
 
     def _setup_intermediate_image(self) -> str:
         intermediate_name = "-".join(
             [
                 self.image_remote_name,
-                self.image.version.replace(".", "-"),
+                self.image.name.replace(".", "-"),
                 f"r{self.image.revision}",
             ]
         )
@@ -147,7 +181,7 @@ class LXDProvider(Provider):
         # Intermediate instances cannot be ephemeral. Publishing may fail.
         intermediate_instance = self._setup_instance(
             instance=intermediate_name,
-            image=self.image.version,
+            image=self.image.name,
             image_remote=self.image_remote_name,
             ephemeral=False,
         )

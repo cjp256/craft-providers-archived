@@ -2,6 +2,7 @@ import pathlib
 import random
 import string
 import subprocess
+import time
 
 import pytest
 
@@ -55,25 +56,60 @@ def project(lxc):
 
 
 @pytest.fixture()
-def instance(lxc, project):
-    instance = "itest-" + "".join(random.choices(string.ascii_uppercase, k=8))
-    lxc.launch(
+def instance_name():
+    return "itest-" + "".join(random.choices(string.ascii_uppercase, k=8))
+
+
+@pytest.fixture()
+def instance(instance_launcher, instance_name):
+    instance_launcher(
         config_keys=dict(),
-        instance=instance,
+        instance=instance_name,
         image_remote="ubuntu",
         image="16.04",
         project=project,
         ephemeral=False,
     )
 
-    # Make sure container is ready.
-    lxc.exec(
-        project=project,
-        instance=instance,
-        command=["systemctl", "start", "multi-user.target"],
-    )
+    return instance_name
 
-    return instance
+
+@pytest.fixture()
+def instance_launcher(lxc, project, instance_name):
+    def launch(
+        config_keys=None,
+        instance_name=instance_name,
+        image_remote="ubuntu",
+        image="16.04",
+        project=project,
+        ephemeral=False,
+    ) -> str:
+        lxc.launch(
+            config_keys=dict(),
+            instance=instance_name,
+            image_remote="ubuntu",
+            image="16.04",
+            project=project,
+            ephemeral=False,
+        )
+
+        # Make sure container is ready
+        for i in range(0, 60):
+            proc = lxc.exec(
+                project=project,
+                instance=instance_name,
+                command=["systemctl", "is-system-running"],
+                stdout=subprocess.PIPE,
+            )
+
+            running_state = proc.stdout.decode().strip()
+            if running_state in ["running", "degraded"]:
+                break
+            time.sleep(0.5)
+
+        return instance_name
+
+    yield launch
 
 
 @pytest.fixture()

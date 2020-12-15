@@ -7,17 +7,22 @@ logger = logging.getLogger(__name__)
 
 
 class Image(ABC):
-    """Image Configurator."""
+    """Image Configurator.
 
-    def __init__(
-        self,
-        *,
-        version: str,
-        revision: int,
-    ):
-        self.version = version
+    Attributes:
+        name: Name of image (typically the version alias).
+        revision: Compatibility / revision of setup.
+    """
+
+    def __init__(self, *, name: str, revision: str) -> None:
+        self.name = name
         self.revision = revision
 
     @abstractmethod
     def setup(self, *, executor: Executor) -> None:
+        """Setup instance.
+
+        Raises:
+            CompatibilityError: if executor instance is incompatible with image.
+        """
         ...
