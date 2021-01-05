@@ -69,13 +69,13 @@ def test_image_delete(lxc, project):
 
 
 def test_file_push(instance, lxc, project, tmp_path):
-    tf = tmp_path / "test.txt"
-    tf.write_text("this is a test")
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("this is a test")
 
     lxc.file_push(
         instance=instance,
         project=project,
-        source=tf,
+        source=test_file,
         destination=pathlib.Path("/tmp/foo"),
     )
 
@@ -93,13 +93,13 @@ def test_file_push(instance, lxc, project, tmp_path):
 
 def test_file_pull(instance, lxc, project, tmp_path):
     out_path = tmp_path / "out.txt"
-    tf = tmp_path / "test.txt"
-    tf.write_text("this is a test")
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("this is a test")
 
     lxc.file_push(
         instance=instance,
         project=project,
-        source=tf,
+        source=test_file,
         destination=pathlib.Path("/tmp/foo"),
     )
 

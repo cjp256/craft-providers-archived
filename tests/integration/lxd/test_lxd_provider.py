@@ -65,12 +65,12 @@ def test_incompatible_instance_revision(
     )
 
     # Insert incompatible config.
-    tf = tmp_path / "image.conf"
-    tf.write_text("revision: -1")
+    test_file = tmp_path / "image.conf"
+    test_file.write_text("revision: -1")
     lxc.file_push(
         instance=instance_name,
         project=project,
-        source=tf,
+        source=test_file,
         destination=pathlib.Path("/etc/craft-image.conf"),
     )
 
@@ -123,8 +123,8 @@ def test_incompatible_instance_os(
     )
 
     # Insert incompatible config.
-    tf = tmp_path / "os-release"
-    tf.write_text(
+    test_file = tmp_path / "os-release"
+    test_file.write_text(
         textwrap.dedent(
             """
             NAME="Ubuntu"
@@ -145,7 +145,7 @@ def test_incompatible_instance_os(
     lxc.file_push(
         instance=instance_name,
         project=project,
-        source=tf,
+        source=test_file,
         destination=pathlib.Path("/etc/os-release"),
     )
 

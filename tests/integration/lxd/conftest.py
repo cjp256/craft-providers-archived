@@ -1,3 +1,4 @@
+"""Fixtures for LXD integration tests."""
 import pathlib
 import random
 import string
@@ -32,7 +33,7 @@ def lxd():
 
 
 @pytest.fixture()
-def lxc(lxd):
+def lxc(lxd):  # pylint: disable=unused-argument
     yield LXC()
 
 
@@ -77,6 +78,7 @@ def instance(instance_launcher, instance_name, project):
 @pytest.fixture()
 def instance_launcher(lxc, project, instance_name):
     def launch(
+        *,
         config_keys=None,
         instance_name=instance_name,
         image_remote="ubuntu",
@@ -85,16 +87,16 @@ def instance_launcher(lxc, project, instance_name):
         ephemeral=False,
     ) -> str:
         lxc.launch(
-            config_keys=dict(),
+            config_keys=config_keys,
             instance=instance_name,
-            image_remote="ubuntu",
-            image="16.04",
+            image_remote=image_remote,
+            image=image,
             project=project,
-            ephemeral=False,
+            ephemeral=ephemeral,
         )
 
         # Make sure container is ready
-        for i in range(0, 60):
+        for _ in range(0, 60):
             proc = lxc.exec(
                 project=project,
                 instance=instance_name,

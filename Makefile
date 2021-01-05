@@ -127,6 +127,7 @@ test-mypy:
 .PHONY: test-pylint
 test-pylint:
 	pylint craft_providers
+	pylint tests --disable=missing-module-docstring,missing-function-docstring,redefined-outer-name
 
 .PHONY: test-pyright
 test-pyright:
