@@ -27,25 +27,24 @@ class BuilddImageAlias(enum.Enum):
 class BuilddImage(Image):
     """Buildd Image Configurator.
 
-    Args:
-        alias: Image alias / version.
-        hostname: Hostname to configure.
-
     Attributes:
         alias: Image alias / version.
         hostname: Hostname to configure.
-        version: Image version (e.g. "16.04").
-        revision: Image setup revisionversion (e.g. "16.04").
+
+    Args:
+        alias: Image alias / version.
+        hostname: Hostname to configure.
+        revision: Image setup compatibility revision (e.g. "0").
+
     """
 
     def __init__(
         self,
         *,
         alias: BuilddImageAlias,
-        revision: str = "0",
         hostname: str = "craft-buildd-instance",
+        revision: str = "0",
     ):
-        """Initialize buildd image."""
         super().__init__(name=str(alias.value), revision=revision)
 
         self.alias = alias

@@ -13,6 +13,11 @@ Here you will find all of the provider documentation...
 
    images
 
+.. toctree::
+   :caption: Reference:
+
+   craft_providers
+
 Indices and tables
 ==================
 
