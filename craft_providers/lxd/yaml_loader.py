@@ -1,3 +1,4 @@
+"""Yaml loader."""
 import logging
 from typing import Any
 
@@ -6,8 +7,8 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
-class _YamlLoader(yaml.SafeLoader):
-    pass
+class _YamlLoader(yaml.SafeLoader):  # pylint: disable=too-many-ancestors
+    """Safe yaml loader to be modified for loading yaml output from lxc."""
 
 
 def _load_yaml(data: bytes) -> Any:

@@ -1,3 +1,4 @@
+"""LXD Instance."""
 import logging
 import os
 import pathlib
@@ -22,6 +23,8 @@ class LXDInstance(Executor):
         remote: str = "local",
         lxc: Optional[LXC] = None,
     ):
+        super().__init__()
+
         self.name = name
         self.project = project
         self.remote = remote
@@ -39,14 +42,22 @@ class LXDInstance(Executor):
         gid: int = 0,
         uid: int = 0,
     ) -> None:
-        """Create file with content and file mode."""
-        with tempfile.NamedTemporaryFile(delete=False) as tf:
-            tf.write(content)
-            tf.flush()
+        """Create file with content and file mode.
+
+        Args:
+            destination: Path to file.
+            content: Contents of file.
+            file_mode: File mode string (e.g. '0644').
+            gid: File owner group ID.
+            uid: Filer owner user ID.
+        """
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(content)
+            temp_file.flush()
 
         self.lxc.file_push(
             instance=self.name,
-            source=pathlib.Path(tf.name),
+            source=pathlib.Path(temp_file.name),
             destination=destination,
             mode=file_mode,
             gid=str(gid),
@@ -55,9 +66,14 @@ class LXDInstance(Executor):
             remote=self.remote,
         )
 
-        os.unlink(tf.name)
+        os.unlink(temp_file.name)
 
     def delete(self, force: bool = True) -> None:
+        """Delete instance.
+
+        Args:
+            force: Delete even if running.
+        """
         return self.lxc.delete(
             instance=self.name,
             project=self.project,
@@ -66,6 +82,15 @@ class LXDInstance(Executor):
         )
 
     def execute_popen(self, command: List[str], **kwargs) -> subprocess.Popen:
+        """Execute process in instance using subprocess.Popen().
+
+        Args:
+            command: Command to execute.
+            kwargs: Additional keyword arguments for subprocess.Popen().
+
+        Returns:
+            Popen instance.
+        """
         return self.lxc.exec(
             instance=self.name,
             command=command,
@@ -75,20 +100,43 @@ class LXDInstance(Executor):
             **kwargs,
         )
 
-    def execute_run(self, command: List[str], **kwargs) -> subprocess.CompletedProcess:
+    def execute_run(
+        self, command: List[str], check=True, **kwargs
+    ) -> subprocess.CompletedProcess:
+        """Execute process in instance using subprocess.run().
+
+        Args:
+            command: Command to execute.
+            kwargs: Additional keyword arguments for subprocess.run().
+
+        Returns:
+            CompletedProcess instance returned from subprocess.run().
+        """
         return self.lxc.exec(
             instance=self.name,
             command=command,
             project=self.project,
             remote=self.remote,
             runner=subprocess.run,
+            check=check,
             **kwargs,
         )
 
     def exists(self) -> bool:
+        """Check if instance exists.
+
+        Returns:
+            True if instance exists.
+        """
         return self.get_state() is not None
 
     def get_state(self) -> Optional[Dict[str, Any]]:
+        """Get state configuration for instance.
+
+        Returns:
+            State information parsed from lxc if instance exists,
+            else None.
+        """
         instances = self.lxc.list(
             instance=self.name, project=self.project, remote=self.remote
         )
@@ -102,6 +150,16 @@ class LXDInstance(Executor):
         return None
 
     def is_mounted(self, *, source: pathlib.Path, destination: pathlib.Path) -> bool:
+        """Check if path is mounted at target.
+
+        Args:
+            source: Host path to check.
+            destination: Instance path to check.
+
+        Returns:
+             True if source is mounted at destination.
+        """
+
         devices = self.lxc.config_device_show(
             instance=self.name, project=self.project, remote=self.remote
         )
@@ -129,6 +187,14 @@ class LXDInstance(Executor):
         uid: str = str(os.getuid()),
         ephemeral: bool = True,
     ) -> None:
+        """Launch instance.
+
+        Args:
+            image: Image name to launch.
+            image_remote: Image remote name.
+            uid: Host user ID to map to instance root.
+            ephemeral: Flag to enable ephemeral instance.
+        """
         config_keys = dict()
         config_keys["raw.idmap"] = f"both {uid!s} 0"
 
@@ -148,7 +214,12 @@ class LXDInstance(Executor):
     def mount(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
         """Mount host source directory to target mount point.
 
-        Checks first to see if already mounted."""
+        Checks first to see if already mounted.
+
+        Args:
+            source: Host path to mount.
+            destination: Instance path to mount to.
+        """
         if self.is_mounted(source=source, destination=destination):
             return
 
@@ -173,16 +244,25 @@ class LXDInstance(Executor):
         return seccomp_listener == "true"
 
     def start(self) -> None:
+        """Start instance."""
         self.lxc.start(instance=self.name, project=self.project, remote=self.remote)
 
     def stop(self) -> None:
+        """Stop instance."""
         self.lxc.stop(instance=self.name, project=self.project, remote=self.remote)
 
     def supports_mount(self) -> bool:
+        """Check if instance supports mounting from host."""
         return self.remote == "local"
 
     def sync_from(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
-        logger.info(f"Syncing env:{source} -> host:{destination}...")
+        """Sync contents from instance to host.
+
+        Args:
+            source: Path to copy from instance.
+            destination: Path on host to copy to.
+        """
+        logger.info("Syncing env:%s -> host:%s...", source, destination)
         # TODO: check if mount makes source == destination, skip if so.
         if self.is_target_file(source):
             self.lxc.file_pull(
@@ -209,8 +289,14 @@ class LXDInstance(Executor):
             raise FileNotFoundError(f"Source {source} not found.")
 
     def sync_to(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
+        """Sync contents from host to instance.
+
+        Args:
+            source: Path on host to copy from.
+            destination: Path in instance to copy to.
+        """
         # TODO: check if mounted, skip sync if source == destination
-        logger.info(f"Syncing host:{source} -> env:{destination}...")
+        logger.info("Syncing host:%s -> env:%s...", source, destination)
         if source.is_file():
             self.lxc.file_push(
                 instance=self.name,

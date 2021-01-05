@@ -1,3 +1,4 @@
+"""Host provider."""
 import logging
 from typing import Optional
 
@@ -15,6 +16,7 @@ class HostProvider(Provider):
         *,
         sudo_user: Optional[str] = "root",
     ) -> None:
+        super().__init__()
         self.sudo_user = sudo_user
 
     def setup(self) -> Executor:

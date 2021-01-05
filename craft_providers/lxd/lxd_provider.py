@@ -1,8 +1,12 @@
+"""LXD Provider."""
 import logging
 from typing import Optional
 
-from craft_providers import Provider, images
-from craft_providers.lxd import LXC, LXD, LXDInstance
+from .. import images
+from ..provider import Provider
+from .lxc import LXC
+from .lxd import LXD
+from .lxd_instance import LXDInstance
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +17,8 @@ class LXDProvider(Provider):
     Args:
         image: Image configuration.
         instance_name: Name of instance to use/create.
-        auto_clean: Automatically clean LXD instances if required (e.g. incompatible).
+        auto_clean: Automatically clean LXD instances if required (e.g.
+          incompatible).
         image_remote_addr: Remote address for LXD image to use.
         image_remote_name: Remote name for LXD image to use.
         image_remote_protocol: Remote protoocl for LXD image to use.
@@ -22,10 +27,13 @@ class LXDProvider(Provider):
         lxd: LXD server API.
         project: Name of LXD project.
         remote: Name of LXD remote for instance to run on.
-        use_ephemeral_instances: Set instances to be ephemeral (clean on shutdown).
-        use_intermediate_instances: Create intermediate instances to speedup setup of future instances.
+        use_ephemeral_instances: Set instances to be ephemeral (clean on
+          shutdown).
+        use_intermediate_instances: Create intermediate instances to speedup
+          setup of future instances.
     """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
@@ -43,6 +51,8 @@ class LXDProvider(Provider):
         use_ephemeral_instances: bool = True,
         use_intermediate_image: bool = True,
     ):
+        super().__init__()
+
         self.image = image
         self.instance_name = instance_name
 
@@ -127,7 +137,9 @@ class LXDProvider(Provider):
         except images.CompatibilityError as error:
             if self.auto_clean:
                 logger.warning(
-                    f"Cleaning incompatible instance {lxd_instance.name!r}: ({error.reason})"
+                    "Cleaning incompatible instance '%s' (%s).",
+                    lxd_instance.name,
+                    error.reason,
                 )
                 lxd_instance.delete(force=True)
             else:
@@ -171,8 +183,8 @@ class LXDProvider(Provider):
             ]
         )
 
-        images = self.lxc.image_list(project=self.project, remote=self.remote)
-        for image in images:
+        image_list = self.lxc.image_list(project=self.project, remote=self.remote)
+        for image in image_list:
             for alias in image["aliases"]:
                 if intermediate_name == alias["name"]:
                     logger.info("Using intermediate image.")

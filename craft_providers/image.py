@@ -1,12 +1,13 @@
+"""Image module."""
 import logging
 from abc import ABC, abstractmethod
 
-from craft_providers import Executor
+from .executor import Executor
 
 logger = logging.getLogger(__name__)
 
 
-class Image(ABC):
+class Image(ABC):  # pylint: disable=too-few-public-methods
     """Image Configurator.
 
     Attributes:

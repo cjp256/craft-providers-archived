@@ -1,3 +1,4 @@
+"""Executor module."""
 import logging
 import pathlib
 import shutil
@@ -33,12 +34,21 @@ class Executor(ABC):
         ...
 
     @abstractmethod
-    def execute_run(self, command: List[str], **kwargs) -> subprocess.CompletedProcess:
+    def execute_run(
+        self, command: List[str], check=True, **kwargs
+    ) -> subprocess.CompletedProcess:
         """Execute command in instance, using subprocess.run().
 
         If `env` is in kwargs, it will be applied to the target runtime
         environment, not the host's.
 
+        Arguments:
+            command: Command to execute.
+            check: Check flag to subprocess.run(), except defaults to True.
+            kwargs: Additional keyword arguments to pass.
+
+        Returns:
+            Completed process.
         """
         ...
 
@@ -49,6 +59,9 @@ class Executor(ABC):
         If `env` is in kwargs, it will be applied to the target runtime
         environment, not the host's.
 
+        Arguments:
+            command: Command to execute.
+            kwargs: Additional keyword arguments to pass.
         """
         ...
 
@@ -81,10 +94,26 @@ class Executor(ABC):
         ...
 
     def is_target_directory(self, target: pathlib.Path) -> bool:
+        """Check if path is directory.
+
+        Args:
+            target: Path to check.
+
+        Returns:
+            True if directory, False otherwise.
+        """
         proc = self.execute_run(command=["test", "-d", target.as_posix()])
         return proc.returncode == 0
 
     def is_target_file(self, target: pathlib.Path) -> bool:
+        """Check if path is file.
+
+        Args:
+            target: Path to check.
+
+        Returns:
+            True if file, False otherwise.
+        """
         proc = self.execute_run(command=["test", "-f", target.as_posix()])
         return proc.returncode == 0
 

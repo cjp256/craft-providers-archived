@@ -1,3 +1,4 @@
+"""Buildd image(s)."""
 import enum
 import logging
 import pathlib
@@ -8,7 +9,8 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from craft_providers import Executor, Image, images
+from craft_providers import Executor, Image
+from craft_providers.images import errors
 from craft_providers.util.os_release import parse_os_release
 
 logger = logging.getLogger(__name__)
@@ -84,6 +86,11 @@ class BuilddImage(Image):
         return parse_os_release(proc.stdout.decode())
 
     def ensure_compatible(self, *, executor: Executor) -> None:
+        """Ensure exector target is compatible with image.
+
+        Args:
+            executor: Executor for target container.
+        """
         self._ensure_image_revision_compatible(executor=executor)
         self._ensure_os_compatible(executor=executor)
 
@@ -96,25 +103,25 @@ class BuilddImage(Image):
 
         revision = craft_config.get("revision")
         if revision != self.revision:
-            raise images.CompatibilityError(
+            raise errors.CompatibilityError(
                 reason=f"Expected image revision {self.revision!r}, found '{revision!s}'"
             )
 
     def _ensure_os_compatible(self, *, executor: Executor) -> None:
         os_release = self._read_os_release(executor=executor)
         if os_release is None:
-            raise images.CompatibilityError(reason="/etc/os-release not found")
+            raise errors.CompatibilityError(reason="/etc/os-release not found")
 
         logger.warning(os_release)
         os_id = os_release.get("NAME")
         if os_id != "Ubuntu":
-            raise images.CompatibilityError(
+            raise errors.CompatibilityError(
                 reason=f"Exepcted OS 'Ubuntu', found {os_id!r}"
             )
 
         version_id = os_release.get("VERSION_ID")
         if version_id != self.name:
-            raise images.CompatibilityError(
+            raise errors.CompatibilityError(
                 reason=f"Expected OS version {self.name!r}, found {version_id!r}"
             )
 
@@ -264,7 +271,7 @@ class BuilddImage(Image):
             timeout_secs: Timeout in seconds.
         """
         logger.info("Waiting for networking to be ready...")
-        for i in range(timeout_secs * 2):
+        for _ in range(timeout_secs * 2):
             proc = executor.execute_run(
                 command=["getent", "hosts", "snapcraft.io"], stdout=subprocess.DEVNULL
             )
@@ -285,7 +292,7 @@ class BuilddImage(Image):
             timeout_secs: Timeout in seconds.
         """
         logger.info("Waiting for container to be ready...")
-        for i in range(timeout_secs * 2):
+        for _ in range(timeout_secs * 2):
             proc = executor.execute_run(
                 command=["systemctl", "is-system-running"], stdout=subprocess.PIPE
             )
@@ -294,7 +301,7 @@ class BuilddImage(Image):
             if running_state in ["running", "degraded"]:
                 break
 
-            logger.debug(f"systemctl is-system-running: {running_state!r}")
+            logger.debug("systemctl is-system-running: %s", running_state)
             sleep(0.5)
         else:
             logger.warning("Systemd failed to reach target before timeout.")

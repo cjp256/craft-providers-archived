@@ -1,3 +1,4 @@
+"""LXC wrapper."""
 import logging
 import pathlib
 import shlex
@@ -12,7 +13,7 @@ from .yaml_loader import _load_yaml
 logger = logging.getLogger(__name__)
 
 
-class LXC:
+class LXC:  # pylint: disable=too-many-public-methods
     """Wrapper for lxc."""
 
     def __init__(
@@ -25,7 +26,7 @@ class LXC:
         else:
             self.lxc_path = lxc_path
 
-    def _run(
+    def _run(  # pylint: disable=redefined-builtin
         self,
         *,
         command: List[str],
@@ -39,7 +40,7 @@ class LXC:
         command = [str(self.lxc_path), "--project", project, *command]
         quoted = " ".join([shlex.quote(c) for c in command])
 
-        logger.warning(f"Executing on host: {quoted}")
+        logger.warning("Executing on host: %s", quoted)
 
         try:
             if input is not None:
@@ -51,7 +52,7 @@ class LXC:
                     command, check=check, stderr=stderr, stdout=stdout
                 )
         except subprocess.CalledProcessError as error:
-            logger.warning(f"Failed to execute: {error.output}")
+            logger.warning("Failed to execute: %s", error.output)
             raise error
 
         return proc
@@ -87,6 +88,7 @@ class LXC:
     def config_device_show(
         self, *, instance: str, project: str = "default", remote: str = "local"
     ) -> Dict[str, Any]:
+        """Show device config."""
         proc = self._run(
             command=["config", "device", "show", f"{remote}:{instance}"],
             project=project,
@@ -177,9 +179,9 @@ class LXC:
         )
 
         quoted = " ".join([shlex.quote(c) for c in command])
-        logger.warning(f"Executing in container: {quoted}")
+        logger.warning("Executing in container: %s", quoted)
 
-        return runner(command, **kwargs)
+        return runner(command, **kwargs)  # pylint: disable=subprocess-run-check
 
     def file_pull(
         self,
@@ -274,6 +276,7 @@ class LXC:
         project: str = "default",
         remote: str = "local",
     ) -> None:
+        """Launch instance."""
         command = [
             "launch",
             f"{image_remote}:{image}",
@@ -362,6 +365,7 @@ class LXC:
         project: str = "default",
         remote: str = "local",
     ) -> None:
+        """Edit profile."""
         encoded_config = yaml.dump(config).encode()
         self._run(
             command=["profile", "edit", f"{remote}:{profile}"],
@@ -430,6 +434,7 @@ class LXC:
         return _load_yaml(proc.stdout)
 
     def setup(self) -> None:
+        """(Re)Setup lxc wrapper."""
         if self.lxc_path.exists():
             return
 
@@ -473,21 +478,21 @@ def purge_project(*, lxc: LXC, project: str = "default", remote: str = "local") 
     # with contextlib.suppress(subprocess.CalledProcessError):
     projects = lxc.project_list(remote=remote)
     if project not in projects:
-        logger.warning(f"Attempted to purge non-existent project {project}.")
+        logger.warning("Attempted to purge non-existent project '%s'.", project)
         return
 
     # Cleanup any outstanding instances.
     for instance in lxc.list(project=project):
-        logger.warning(f"Deleting instance {instance}.")
+        logger.warning("Deleting instance '%s'.", instance)
         lxc.delete(
             instance=instance["name"], project=project, remote=remote, force=True
         )
 
     # Cleanup any outstanding images.
     for image in lxc.image_list(project=project):
-        logger.warning(f"Deleting image {image}.")
+        logger.warning("Deleting image '%s'.", image)
         lxc.image_delete(image=image["fingerprint"], project=project, remote=remote)
 
     # Cleanup project.
-    logger.warning(f"Deleting project {project}.")
+    logger.warning("Deleting project '%s'.", project)
     lxc.project_delete(project=project, remote=remote)

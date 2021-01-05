@@ -1,7 +1,8 @@
+"""Provider module."""
 import logging
 from abc import ABC, abstractmethod
 
-from . import Executor
+from .executor import Executor
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,6 @@ class Provider(ABC):
         self,
         *,
         interactive: bool = True,
-        **kwargs,
     ) -> None:
         """Initialize provider.
 

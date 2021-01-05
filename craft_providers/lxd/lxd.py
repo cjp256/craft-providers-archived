@@ -1,3 +1,5 @@
+"""LXD manager."""
+
 import logging
 import pathlib
 import shutil
@@ -20,7 +22,12 @@ class LXD:
         else:
             self.lxd_path = lxd_path
 
-    def _verify_lxd_version(self) -> None:
+    def ensure_supported_version(self) -> None:
+        """Ensure LXD meets minimum requirements.
+
+        Raises:
+            RuntimeError if unsupported.
+        """
         proc = subprocess.run(
             [self.lxd_path, "version"],
             check=True,
@@ -37,20 +44,33 @@ class LXD:
             )
 
     def _find_lxd(self) -> pathlib.Path:
-        lxd_path = shutil.which("lxd")
+        """Find lxd executable.
+
+        Check PATH for executable, falling back to /snap/bin/lxd if not found.
+
+        Returns:
+            Path to lxd executable.  If executable not found, path is
+            /snap/bin/lxd ()
+        """
+        which_lxd = shutil.which("lxd")
 
         # Default to standard snap location if not found in PATH.
-        if lxd_path is None:
-            lxd_path = "/snap/bin/lxd"
+        if which_lxd is None:
+            lxd_path = pathlib.Path("/snap/bin/lxd")
+        else:
+            lxd_path = pathlib.Path(which_lxd)
 
-        return pathlib.Path(lxd_path)
+        return lxd_path
 
     def setup(self) -> None:
-        """Ensure LXD is installed with required version."""
+        """Ensure LXD is installed with required version.
+
+        Raises:
+            RuntimeError if unsupported.
+        """
         if not self.lxd_path.exists():
             subprocess.run(["sudo", "snap", "install", "lxd"], check=True)
 
-            # Make sure lxd is found in PATH.
             self.lxd_path = self._find_lxd()
             if not self.lxd_path.exists():
                 raise RuntimeError("Failed to install LXD, or lxd not found in PATH.")
@@ -60,4 +80,4 @@ class LXD:
             )
             subprocess.run(["sudo", str(self.lxd_path), "init", "--auto"], check=True)
 
-        self._verify_lxd_version()
+        self.ensure_supported_version()
