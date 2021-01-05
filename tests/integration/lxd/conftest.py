@@ -38,21 +38,21 @@ def lxc(lxd):
 
 @pytest.fixture()
 def project(lxc):
-    project = "ptest-" + "".join(random.choices(string.ascii_uppercase, k=8))
-    lxc.project_create(project=project)
+    project_name = "ptest-" + "".join(random.choices(string.ascii_uppercase, k=8))
+    lxc.project_create(project=project_name)
 
     default_cfg = lxc.profile_show(profile="default", project="default")
-    lxc.profile_edit(profile="default", project=project, config=default_cfg)
+    lxc.profile_edit(profile="default", project=project_name, config=default_cfg)
 
     projects = lxc.project_list()
-    assert project in projects
+    assert project_name in projects
 
-    instances = lxc.list(project=project)
+    instances = lxc.list(project=project_name)
     assert instances == []
 
-    yield project
+    yield project_name
 
-    purge_project(lxc=lxc, project=project)
+    purge_project(lxc=lxc, project=project_name)
 
 
 @pytest.fixture()
@@ -61,10 +61,10 @@ def instance_name():
 
 
 @pytest.fixture()
-def instance(instance_launcher, instance_name):
+def instance(instance_launcher, instance_name, project):
     instance_launcher(
         config_keys=dict(),
-        instance=instance_name,
+        instance_name=instance_name,
         image_remote="ubuntu",
         image="16.04",
         project=project,
