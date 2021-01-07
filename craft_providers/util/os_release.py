@@ -20,12 +20,10 @@ def parse_os_release(content: str) -> Dict[str, str]:
         VERSION_CODENAME=groovy
         UBUNTU_CODENAME=groovy
 
-    Args:
-        content: String contents of os-release file.
+    :param content: String contents of os-release file.
 
-    Returns:
-        Dictionary of key-mappings found in os-release.
-        Values are stripped of encapsulating double-quotes.
+    :returns: Dictionary of key-mappings found in os-release.  Values are
+              stripped of encapsulating double-quotes.
     """
 
     mappings: Dict[str, str] = {}

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class Image(ABC):  # pylint: disable=too-few-public-methods
-    """Image Configurator.
+    """Image definition for configuration/setup.
 
     Images encapsulate the logic required to setup a base image upon initial
     launch and restarting.  By extending this class, an application may include

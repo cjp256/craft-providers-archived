@@ -1,15 +1,16 @@
-Images API documentation
-========================
+************************
+Images
+************************
 
-Image
------
+Abstract Base Image
+===================
 
-.. autoclass:: craft_providers.images.Image
+.. autoclass:: craft_providers.Image
    :show-inheritance:
    :members:
 
-BuilddImage
------------
+Image Implementations
+=====================
 
 .. autoclass:: craft_providers.images.BuilddImage
    :show-inheritance:

@@ -14,23 +14,22 @@ logger = logging.getLogger(__name__)
 class LXDProvider(Provider):
     """LXD Provider.
 
-    Args:
-        image: Image configuration.
-        instance_name: Name of instance to use/create.
-        auto_clean: Automatically clean LXD instances if required (e.g.
-          incompatible).
-        image_remote_addr: Remote address for LXD image to use.
-        image_remote_name: Remote name for LXD image to use.
-        image_remote_protocol: Remote protoocl for LXD image to use.
-        instance: Specific LXDInstance to use, rather than create.
-        lxc: LXC client API.
-        lxd: LXD server API.
-        project: Name of LXD project.
-        remote: Name of LXD remote for instance to run on.
-        use_ephemeral_instances: Set instances to be ephemeral (clean on
-          shutdown).
-        use_intermediate_instances: Create intermediate instances to speedup
-          setup of future instances.
+    :param image: Image configuration.
+    :param instance_name: Name of instance to use/create.
+    :param auto_clean: Automatically clean LXD instances if required (e.g.
+        incompatible).
+    :param image_remote_addr: Remote address for LXD image to use.
+    :param image_remote_name: Remote name for LXD image to use.
+    :param image_remote_protocol: Remote protoocl for LXD image to use.
+    :param instance: Specific LXDInstance to use, rather than create.
+    :param lxc: LXC client API.
+    :param lxd: LXD server API.
+    :param project: Name of LXD project.
+    :param remote: Name of LXD remote for instance to run on.
+    :param use_ephemeral_instances: Set instances to be ephemeral (clean on
+        shutdown).
+    :param use_intermediate_instances: Create intermediate instances to speedup
+        setup of future instances.
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -80,11 +79,9 @@ class LXDProvider(Provider):
     def setup(self) -> LXDInstance:
         """Sets up instance, creating intermediate image as configured.
 
-        Returns:
-            LXD instance.
+        :returns: LXD instance.
 
-        Raises:
-            IncompatibleInstanceError: If incompatible and clean is disabled.
+        :raises IncompatibleInstanceError: If incompatible and clean is disabled.
         """
         self.lxd.setup()
         self.lxc.setup()

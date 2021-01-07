@@ -42,13 +42,11 @@ class Executor(ABC):
         If `env` is in kwargs, it will be applied to the target runtime
         environment, not the host's.
 
-        Arguments:
-            command: Command to execute.
-            check: Check flag to subprocess.run(), except defaults to True.
-            kwargs: Additional keyword arguments to pass.
+        :param command: Command to execute.
+        :param check: Check flag to subprocess.run(), except defaults to True.
+        :param kwargs: Additional keyword arguments to pass.
 
-        Returns:
-            Completed process.
+        :returns: Completed process.
         """
         ...
 
@@ -59,9 +57,8 @@ class Executor(ABC):
         If `env` is in kwargs, it will be applied to the target runtime
         environment, not the host's.
 
-        Arguments:
-            command: Command to execute.
-            kwargs: Additional keyword arguments to pass.
+        :param command: Command to execute.
+        :param kwargs: Additional keyword arguments to pass.
         """
         ...
 
@@ -76,6 +73,8 @@ class Executor(ABC):
         Providing this as an abstract method allows the provider to implement
         the most performant option available.
 
+        :param source: Target directory to copy from.
+        :param destination: Host destination directory to copy to.
         """
         ...
 
@@ -90,17 +89,17 @@ class Executor(ABC):
         Providing this as an abstract method allows the provider to implement
         the most performant option available.
 
+        :param source: Host directory to copy.
+        :param destination: Target destination directory to copy to.
         """
         ...
 
     def is_target_directory(self, target: pathlib.Path) -> bool:
         """Check if path is directory.
 
-        Args:
-            target: Path to check.
+        :param target: Path to check.
 
-        Returns:
-            True if directory, False otherwise.
+        :returns: True if directory, False otherwise.
         """
         proc = self.execute_run(command=["test", "-d", target.as_posix()])
         return proc.returncode == 0
@@ -108,11 +107,9 @@ class Executor(ABC):
     def is_target_file(self, target: pathlib.Path) -> bool:
         """Check if path is file.
 
-        Args:
-            target: Path to check.
+        :param target: Path to check.
 
-        Returns:
-            True if file, False otherwise.
+        :returns: True if file, False otherwise.
         """
         proc = self.execute_run(command=["test", "-f", target.as_posix()])
         return proc.returncode == 0
@@ -123,6 +120,9 @@ class Executor(ABC):
         """Naive sync from remote using tarball.
 
         Relies on only the required Self.interfaces.
+
+        :param source: Target directory to copy from.
+        :param destination: Host destination directory to copy to.
         """
         destination_path = destination.as_posix()
 
@@ -151,7 +151,12 @@ class Executor(ABC):
     def naive_directory_sync_to(
         self, *, source: pathlib.Path, destination: pathlib.Path, delete=True
     ) -> None:
-        """Naive sync to remote using tarball."""
+        """Naive sync to remote using tarball.
+
+        :param source: Host directory to copy.
+        :param destination: Target destination directory to copy to.
+        :param delete: Flag to delete existing destination, if exists.
+        """
         destination_path = destination.as_posix()
 
         if delete is True:

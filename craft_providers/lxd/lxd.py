@@ -25,8 +25,7 @@ class LXD:
     def ensure_supported_version(self) -> None:
         """Ensure LXD meets minimum requirements.
 
-        Raises:
-            RuntimeError if unsupported.
+        :raises RuntimeError: if unsupported.
         """
         proc = subprocess.run(
             [self.lxd_path, "version"],
@@ -48,9 +47,8 @@ class LXD:
 
         Check PATH for executable, falling back to /snap/bin/lxd if not found.
 
-        Returns:
-            Path to lxd executable.  If executable not found, path is
-            /snap/bin/lxd ()
+        :returns: Path to lxd executable.  If executable not found, path is
+                  /snap/bin/lxd.
         """
         which_lxd = shutil.which("lxd")
 
@@ -65,8 +63,7 @@ class LXD:
     def setup(self) -> None:
         """Ensure LXD is installed with required version.
 
-        Raises:
-            RuntimeError if unsupported.
+        :raises RuntimeError: if unsupported.
         """
         if not self.lxd_path.exists():
             subprocess.run(["sudo", "snap", "install", "lxd"], check=True)

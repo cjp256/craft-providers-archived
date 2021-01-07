@@ -4,8 +4,7 @@
 class CompatibilityError(Exception):
     """Compatibility error.
 
-    Attributes:
-        reason: Reason for incompatibility.
+    :param reason: Reason for incompatibility.
     """
 
     def __init__(self, reason: str) -> None:

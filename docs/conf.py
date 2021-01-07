@@ -59,8 +59,8 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
-# Don't include module names.  The packages export the public APIs,.
-add_module_names = False
+# Do (not) include module names.
+add_module_names = True
 
 # sphinx_autodoc_typehints
 set_type_checking_flag = True
