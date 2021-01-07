@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 from textwrap import dedent
 from time import sleep
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Final, Optional
 
 import yaml
 
@@ -25,30 +25,27 @@ class BuilddImageAlias(enum.Enum):
 
 
 class BuilddImage(Image):
-    """Buildd Image Configurator.
+    """Support for Ubuntu minimal buildd images.
 
-    Attributes:
-        alias: Image alias / version.
-        hostname: Hostname to configure.
-
-    Args:
-        alias: Image alias / version.
-        hostname: Hostname to configure.
-        revision: Image setup compatibility revision (e.g. "0").
-
+    :param alias: Image alias / version.
+    :param hostname: Hostname to configure.
+    :param compatibility_tag: Version of image setup used to ensure compatibility
+        for re-used instances.  Any change to this version would indicate that
+        prior [versioned] instances are incompatible and must be cleaned.  As
+        such, any new value should be unique to old values (e.g. incrementing).
     """
 
     def __init__(
         self,
         *,
         alias: BuilddImageAlias,
+        compatibility_tag: str = "craft-buildd-image-v0",
         hostname: str = "craft-buildd-instance",
-        revision: str = "0",
     ):
-        super().__init__(name=str(alias.value), revision=revision)
+        super().__init__(compatibility_tag=compatibility_tag, name=str(alias.value))
 
-        self.alias = alias
-        self.hostname = hostname
+        self.alias: Final[BuilddImageAlias] = alias
+        self.hostname: Final[str] = hostname
 
     def _read_craft_image_config(
         self, *, executor: Executor
@@ -65,7 +62,7 @@ class BuilddImage(Image):
         return yaml.load(proc.stdout, Loader=yaml.SafeLoader)
 
     def _write_craft_image_config(self, *, executor: Executor) -> None:
-        conf = {"revision": self.revision}
+        conf = {"compatibility_tag": self.compatibility_tag}
         executor.create_file(
             destination=pathlib.Path("/etc/craft-image.conf"),
             content=yaml.dump(conf).encode(),
@@ -87,23 +84,25 @@ class BuilddImage(Image):
     def ensure_compatible(self, *, executor: Executor) -> None:
         """Ensure exector target is compatible with image.
 
-        Args:
-            executor: Executor for target container.
+        :param executor: Executor for target container.
         """
-        self._ensure_image_revision_compatible(executor=executor)
+        self._ensure_image_version_compatible(executor=executor)
         self._ensure_os_compatible(executor=executor)
 
-    def _ensure_image_revision_compatible(self, *, executor: Executor) -> None:
+    def _ensure_image_version_compatible(self, *, executor: Executor) -> None:
         craft_config = self._read_craft_image_config(executor=executor)
 
         # If no config has been written, assume it is compatible (likely an unfinished setup).
         if craft_config is None:
             return
 
-        revision = craft_config.get("revision")
-        if revision != self.revision:
+        tag = craft_config.get("compatibility_tag")
+        if tag != self.compatibility_tag:
             raise errors.CompatibilityError(
-                reason=f"Expected image revision {self.revision!r}, found '{revision!s}'"
+                reason=(
+                    "Expected image compatibility tag "
+                    f"{self.compatibility_tag!r}, found '{tag!s}'"
+                )
             )
 
     def _ensure_os_compatible(self, *, executor: Executor) -> None:
@@ -118,10 +117,11 @@ class BuilddImage(Image):
                 reason=f"Exepcted OS 'Ubuntu', found {os_id!r}"
             )
 
+        compat_version_id = str(self.alias.value)
         version_id = os_release.get("VERSION_ID")
-        if version_id != self.name:
+        if version_id != compat_version_id:
             raise errors.CompatibilityError(
-                reason=f"Expected OS version {self.name!r}, found {version_id!r}"
+                reason=f"Expected OS version {compat_version_id!r}, found {version_id!r}"
             )
 
     def setup(self, *, executor: Executor) -> None:
@@ -133,8 +133,7 @@ class BuilddImage(Image):
         - apt cache
         - snapd
 
-        Args:
-            executor: Executor for target container.
+        :param executor: Executor for target container.
         """
         self.ensure_compatible(executor=executor)
         self._setup_wait_for_system_ready(executor=executor)
@@ -148,16 +147,14 @@ class BuilddImage(Image):
     def _setup_apt(self, *, executor: Executor) -> None:
         """Configure apt & update cache.
 
-        Args:
-            executor: Executor for target container.
+        :param executor: Executor for target container.
         """
         executor.execute_run(command=["apt-get", "update"], check=True)
 
     def _setup_hostname(self, *, executor: Executor) -> None:
         """Configure hostname, installing /etc/hostname.
 
-        Args:
-            executor: Executor for target container.
+        :param executor: Executor for target container.
         """
         executor.create_file(
             destination=pathlib.Path("/etc/hostname"),
@@ -170,8 +167,7 @@ class BuilddImage(Image):
 
         Installs eth0 network configuration using ipv4.
 
-        Args:
-            executor: Executor for target container.
+        :param executor: Executor for target container.
         """
         executor.create_file(
             destination=pathlib.Path("/etc/systemd/network/10-eth0.network"),
@@ -203,9 +199,8 @@ class BuilddImage(Image):
     def _setup_resolved(self, *, executor: Executor) -> None:
         """Configure system-resolved to manage resolve.conf.
 
-        Args:
-            executor: Executor for target container.
-            timeout_secs: Timeout in seconds.
+        :param executor: Executor for target container.
+        :param timeout_secs: Timeout in seconds.
         """
         executor.execute_run(
             command=[
@@ -228,9 +223,8 @@ class BuilddImage(Image):
     def _setup_snapd(self, *, executor: Executor) -> None:
         """Install snapd and dependencies and wait until ready.
 
-        Args:
-            executor: Executor for target container.
-            timeout_secs: Timeout in seconds.
+        :param executor: Executor for target container.
+        :param timeout_secs: Timeout in seconds.
         """
         executor.execute_run(
             command=[
@@ -265,9 +259,8 @@ class BuilddImage(Image):
     ) -> None:
         """Wait until networking is ready.
 
-        Args:
-            executor: Executor for target container.
-            timeout_secs: Timeout in seconds.
+        :param executor: Executor for target container.
+        :param timeout_secs: Timeout in seconds.
         """
         logger.info("Waiting for networking to be ready...")
         for _ in range(timeout_secs * 2):
@@ -286,9 +279,8 @@ class BuilddImage(Image):
     ) -> None:
         """Wait until system is ready.
 
-        Args:
-            executor: Executor for target container.
-            timeout_secs: Timeout in seconds.
+        :param executor: Executor for target container.
+        :param timeout_secs: Timeout in seconds.
         """
         logger.info("Waiting for container to be ready...")
         for _ in range(timeout_secs * 2):

@@ -1,6 +1,7 @@
 """Image module."""
 import logging
 from abc import ABC, abstractmethod
+from typing import Final
 
 from .executor import Executor
 
@@ -14,34 +15,22 @@ class Image(ABC):  # pylint: disable=too-few-public-methods
     launch and restarting.  By extending this class, an application may include
     its own additional setup/update requirements.
 
-    Args:
-        name: Name of image (typically the version alias).
-        revision: Image setup compatibility tag.  This is used to verify
-            that an instance was setup in a manner that is compatible with the
-            current setup.  If changes to the image's setup configuration break
-            on previous instantations, this version string would be incremented,
-            or otherwise modified to indicate a incompatible tag.
-
-    Attributes:
-        name (str): Name of image (typically the version alias).
-        revision (str): Image setup compatibility tag.  This is used to verify
-            that an instance was setup in a manner that is compatible with the
-            current setup.  If changes to the image's setup configuration break
-            on previous instantations, this version string would be incremented,
-            or otherwise modified to indicate a incompatible tag.
-
+    :param name: Name of image.
+    :param compatibility_tag: Version of image setup used to ensure
+        compatibility for re-used instances.  Any change to this version would
+        indicate that prior [versioned] instances are incompatible and must be
+        cleaned.  As such, any new value should be unique to old values (e.g.
+        incrementing).
     """
 
-    def __init__(self, *, name: str, revision: str) -> None:
-        self.name = name
-        self.revision = revision
+    def __init__(self, *, name: str, compatibility_tag: str) -> None:
+        self.name: Final[str] = name
+        self.compatibility_tag: Final[str] = compatibility_tag
 
     @abstractmethod
     def setup(self, *, executor: Executor) -> None:
         """Setup instance.
 
-        Raises:
-            CompatibilityError: if executor instance is incompatible with image.
-
+        :raises CompatibilityError: if executor instance is incompatible with image.
         """
         ...

@@ -51,7 +51,7 @@ def test_lxd_provider(
     assert instance.is_running() is False
 
 
-def test_incompatible_instance_revision(
+def test_incompatible_instance_compatibility_tag(
     lxc, project, instance_name, instance_launcher, tmp_path
 ):
     alias = BuilddImageAlias.XENIAL
@@ -66,7 +66,7 @@ def test_incompatible_instance_revision(
 
     # Insert incompatible config.
     test_file = tmp_path / "image.conf"
-    test_file.write_text("revision: -1")
+    test_file.write_text("compatibility_tag: craft-buildd-image-vX")
     lxc.file_push(
         instance=instance_name,
         project=project,
@@ -92,7 +92,10 @@ def test_incompatible_instance_revision(
         )
         provider.setup()
 
-    assert exc_info.value.reason == "Expected image revision '0', found '-1'"
+    assert (
+        exc_info.value.reason
+        == "Expected image compatibility tag 'craft-buildd-image-v0', found 'craft-buildd-image-vX'"
+    )
 
     lxd.LXDProvider(
         instance_name=instance_name,

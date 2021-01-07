@@ -178,8 +178,7 @@ class LXDProvider(Provider):
         intermediate_name = "-".join(
             [
                 self.image_remote_name,
-                self.image.name.replace(".", "-"),
-                f"r{self.image.revision}",
+                f"r{self.image.compatibility_tag}",
             ]
         )
 
