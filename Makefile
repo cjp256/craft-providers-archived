@@ -73,6 +73,9 @@ docs:
 	sphinx-apidoc -o docs/ craft_providers --no-toc --ext-githubpages
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
+
+.PHONY: docs-browse
+docs-browse: docs
 	$(BROWSER) docs/_build/html/index.html
 
 .PHONY: dist
