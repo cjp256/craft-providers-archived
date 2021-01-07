@@ -115,7 +115,7 @@ test-codespell:
 test-flake8:
 	flake8 .
 
-.PHONY: test-units
+.PHONY: test-integrations
 test-integrations:
 	pytest tests/integration
 
