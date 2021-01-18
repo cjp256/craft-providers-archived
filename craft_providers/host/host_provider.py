@@ -20,9 +20,13 @@ class HostProvider(Provider):
         self.sudo_user = sudo_user
 
     def setup(self) -> Executor:
+        """Launch environment."""
         return HostExecutor(
             sudo_user=self.sudo_user,
         )
 
     def teardown(self, *, clean: bool = False) -> None:
-        pass
+        """Tear down environment.
+
+        :param clean: Purge environment if True.
+        """

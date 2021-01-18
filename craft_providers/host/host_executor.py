@@ -14,9 +14,8 @@ logger = logging.getLogger(__name__)
 class HostExecutor(Executor):
     """Run commands directly on host.
 
-    Attributes:
-        sudo_user: Optional sudo user to run commands with.
-          sudo will not be used if None.
+    :param sudo_user: Optional sudo user to run commands with.  sudo will not be
+        used if None.
     """
 
     def __init__(self, *, sudo_user: Optional[str] = "root") -> None:
@@ -40,8 +39,14 @@ class HostExecutor(Executor):
     ) -> subprocess.CompletedProcess:
         """Execute command using subprocess.run().
 
-        Arguments:
-          command: Command to execute.
+        :param command: Command to execute.
+        :param check: Raise exception on failure.
+        :param kwargs: Keyword args to pass to subprocess.run().
+
+        :returns: Completed process.
+
+        :raises subprocess.CalledProcessError: if command fails and check is
+            True.
         """
         command = self._prepare_execute_args(command=command)
         return subprocess.run(command, check=check, **kwargs)
@@ -49,8 +54,10 @@ class HostExecutor(Executor):
     def execute_popen(self, command: List[str], **kwargs) -> subprocess.Popen:
         """Execute command using Popen().
 
-        Arguments:
-          command: Command to execute.
+        :param command: Command to execute.
+        :param kwargs: Keyword args to pass to Popen().
+
+        :returns: Popen process.
         """
         command = self._prepare_execute_args(command=command)
         return subprocess.Popen(command, **kwargs)
@@ -58,7 +65,11 @@ class HostExecutor(Executor):
     def mount(  # pylint: disable=unused-argument
         self, *, source: pathlib.Path, destination: pathlib.Path
     ) -> bool:
-        """Not applicable for host provider."""
+        """Not applicable for host provider.
+
+        :param source: Source to mount.
+        :param destination: Destination to mount to.
+        """
         return False
 
     def _prepare_execute_args(self, command: List[str]) -> List[str]:
@@ -75,7 +86,21 @@ class HostExecutor(Executor):
 
         return final_cmd
 
-    def sync_to(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
+    def sync_from(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
+        """Copy source file/directory from environment to host destination.
+
+        Standard "cp -r" rules apply:
+
+            - if source is directory, copy happens recursively.
+
+            - if destination exists, source will be copied into destination.
+
+        Providing this as an abstract method allows the provider to implement
+        the most performant option available.
+
+        :param source: Target directory to copy from.
+        :param destination: Host destination directory to copy to.
+        """
         if source.is_file():
             shutil.copy2(source, destination)
         elif source.is_dir():
@@ -83,7 +108,19 @@ class HostExecutor(Executor):
         else:
             raise FileNotFoundError(f"Source {source} not found.")
 
-    def sync_from(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
+    def sync_to(self, *, source: pathlib.Path, destination: pathlib.Path) -> None:
+        """Copy host source file/directory into environment at destination.
+
+        Standard "cp -r" rules apply:
+        - if source is directory, copy happens recursively.
+        - if destination exists, source will be copied into destination.
+
+        Providing this as an abstract method allows the provider to implement
+        the most performant option available.
+
+        :param source: Host directory to copy.
+        :param destination: Target destination directory to copy to.
+        """
         if source.is_file():
             shutil.copy2(source, destination)
         elif source.is_dir():

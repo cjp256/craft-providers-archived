@@ -5,8 +5,7 @@ from typing import Dict
 def parse_os_release(content: str) -> Dict[str, str]:
     """Parser for /etc/os-release.
 
-    Example os-release contents::
-
+    Example os-release contents:
         NAME="Ubuntu"
         VERSION="20.10 (Groovy Gorilla)"
         ID=ubuntu
@@ -22,10 +21,10 @@ def parse_os_release(content: str) -> Dict[str, str]:
 
     :param content: String contents of os-release file.
 
-    :returns: Dictionary of key-mappings found in os-release.  Values are
+    :returns: Dictionary of key-mappings found in os-release. Values are
               stripped of encapsulating double-quotes.
-    """
 
+    """
     mappings: Dict[str, str] = {}
     for line in content.split("\n"):
         line = line.strip()

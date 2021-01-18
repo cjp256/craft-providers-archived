@@ -29,7 +29,7 @@ class Image(ABC):  # pylint: disable=too-few-public-methods
 
     @abstractmethod
     def setup(self, *, executor: Executor) -> None:
-        """Setup instance.
+        """Create, start, and configure instance as necessary.
 
         :raises CompatibilityError: if executor instance is incompatible with image.
         """

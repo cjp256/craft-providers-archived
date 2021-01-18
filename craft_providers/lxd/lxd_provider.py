@@ -77,7 +77,7 @@ class LXDProvider(Provider):
         self.use_intermediate_image = use_intermediate_image
 
     def setup(self) -> LXDInstance:
-        """Sets up instance, creating intermediate image as configured.
+        """Create, start, and configure instance as necessary.
 
         :returns: LXD instance.
 
@@ -213,6 +213,10 @@ class LXDProvider(Provider):
             return
 
     def teardown(self, *, clean: bool = False) -> None:
+        """Tear down environment.
+
+        :param clean: Purge environment if True.
+        """
         if self.instance is None:
             return
 

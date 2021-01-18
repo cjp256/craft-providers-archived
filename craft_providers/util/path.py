@@ -5,7 +5,7 @@ from typing import Optional
 
 
 def which(command: str) -> Optional[pathlib.Path]:
-    """A pathlib.Path wrapper for shutil.which().
+    """Find command on path.
 
     :param command: Which command to find (e.g. "my-executable").
 
@@ -19,7 +19,7 @@ def which(command: str) -> Optional[pathlib.Path]:
 
 
 def which_required(command: str) -> pathlib.Path:
-    """A pathlib.Path wrapper for shutil.which().
+    """Find command on path, raising error if not found.
 
     :param command: Which command to find (e.g. "my-executable").
 
